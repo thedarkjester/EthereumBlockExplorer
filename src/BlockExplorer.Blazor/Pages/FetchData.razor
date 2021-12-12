@@ -1,0 +1,219 @@
+﻿@page "/fetchdata"
+
+@using BlockExplorer.Blazor.Data
+@using BlockExplorer.Api.Models
+@inject BlockExplorerService blockExplorerService
+
+<h1>Block Explorer</h1>
+
+<EditForm Model="@explorerParams" OnValidSubmit="@GetTransferReportData">
+    <h2>Explore the chain by range</h2>
+    <table class="table" style="width:400px">
+        <thead>
+            <tr>
+                <th>First Block (inclusive)</th>
+                <th>Last Block (inclusive)</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td><InputNumber id="StartBlock" Min="0" DisplayName="Start" @bind-Value="explorerParams.Start" /></td>
+                <td><InputNumber id="EndBlock" Min="0" DisplayName="End" @bind-Value="explorerParams.End" /></td>
+                <td><button class="btn btn-primary" @onclick="GetTransferReportData">Explore</button></td>
+            </tr>
+        </thead>
+    </table>
+</EditForm>
+
+<EditForm Model="@explorerParams" OnValidSubmit="@GetTransferReportData">
+    <h2>Explore the chain by latest blocks</h2>
+    <table class="table" style="width:300px">
+        <thead>
+            <tr>
+                <th>Latest blocks</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td><InputNumber id="PreceedingBocks" DisplayName="Preceeding Bocks" Min="0" @bind-Value="explorerParams.PreceedingBlocks" /></td>
+                <td><button class="btn btn-primary" @onclick="GetPeceedingReportData">Explore</button></td>
+            </tr>
+        </thead>
+    </table>
+</EditForm>
+
+@if (loading == true)
+{
+    <img src="/loader.gif" />
+}
+else
+{
+
+    @if (transferReportResponse != null)
+    {
+
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'Summary')">Summary</button>
+            <button class="tablinks" onclick="openTab(event, 'EOA')">Externally Owned Accounts</button>
+            <button class="tablinks" onclick="openTab(event, 'Contracts')">Contracts</button>
+        </div>
+
+        <div id="Summary" class="tabcontent" style="display:block;">
+            <h3>Summary</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Total sent</th>
+                        <th>Contracts created</th>
+                        <th>EOA Accounts</th>
+                        <th>Contract accounts</th>
+                        <th>Starting Block</th>
+                        <th>Ending Block</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ξ @transferReportResponse.TotalTransfered</td>
+                        <td>@transferReportResponse.ContractsCreated</td>
+                        <td>@externallyOwnedAccountsCount</td>
+                        <td>@contractAccountsCount</td>
+                        <td>@transferReportResponse.FirstBlock</td>
+                        <td>@transferReportResponse.LastBlock</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="EOA" class="tabcontent">
+            <h3>Externally Owned Accounts</h3>
+            @if (externallyOwnedAccountResponse != null && externallyOwnedAccountResponse.Any())
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>Sent</th>
+                            <th>Received</th>
+                            <th>Transaction count</th>
+                            <th>First block seen</th>
+                            <th>Last block seen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var addressTransferTotal in externallyOwnedAccountResponse)
+                        {
+                            <tr>
+                                <td>@addressTransferTotal.Address</td>
+                                <td>Ξ @addressTransferTotal.Sent</td>
+                                <td>Ξ @addressTransferTotal.Received</td>
+                                <td>@addressTransferTotal.TransactionsSeenInCount</td>
+                                <td>@addressTransferTotal.FirstBlockSeenInRange</td>
+                                <td>@addressTransferTotal.LatestBlockSeenInRange</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Nothing to see here</p>
+            }
+        </div>
+
+        <div id="Contracts" class="tabcontent">
+            <h3>Contracts</h3>
+            @if (contractResponse != null && contractResponse.Any())
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>Sent</th>
+                            <th>Received</th>
+                            <th>Transaction count</th>
+                            <th>First block seen</th>
+                            <th>Last block seen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var addressTransferTotal in contractResponse)
+                        {
+                            <tr>
+                                <td>@addressTransferTotal.Address</td>
+                                <td>Ξ @addressTransferTotal.Sent</td>
+                                <td>Ξ @addressTransferTotal.Received</td>
+                                <td>@addressTransferTotal.TransactionsSeenInCount</td>
+                                <td>@addressTransferTotal.FirstBlockSeenInRange</td>
+                                <td>@addressTransferTotal.LatestBlockSeenInRange</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Nothing to see here</p>
+            }
+        </div>
+    }
+}
+
+@code {
+    private ExplorerParams explorerParams = new ExplorerParams { };
+
+    private ApiTransferReportResponse transferReportResponse;
+    private IEnumerable<ApiAddressTotals> externallyOwnedAccountResponse;
+    private IEnumerable<ApiAddressTotals> contractResponse;
+    private int contractAccountsCount;
+    private int externallyOwnedAccountsCount;
+    private bool loading;
+    private string StartBlock;
+    private string EndBlock;
+
+    private async Task GetTransferReportData()
+    {
+        ClearData();
+
+        transferReportResponse = await blockExplorerService.GetTransferReport(explorerParams);
+
+        SetData();
+    }
+
+    private async Task GetPeceedingReportData()
+    {
+        ClearData();
+
+        transferReportResponse = await blockExplorerService.GetTransferReportByPreceedingBlocks(explorerParams);
+
+        SetData();
+    }
+
+    private void ClearData()
+    {
+        loading = true;
+        transferReportResponse = null;
+        externallyOwnedAccountsCount = 0;
+        contractAccountsCount = 0;
+    }
+
+    private void SetData()
+    {
+        if (transferReportResponse != null)
+        {
+            externallyOwnedAccountResponse = null;
+            transferReportResponse.AddressTransferTotals.TryGetValue(false, out externallyOwnedAccountResponse);
+
+            contractResponse = null;
+            transferReportResponse.AddressTransferTotals.TryGetValue(true, out contractResponse);
+
+            if (externallyOwnedAccountResponse != null)
+            {
+                externallyOwnedAccountsCount = externallyOwnedAccountResponse.Count();
+            }
+            if (contractResponse != null)
+            {
+                contractAccountsCount = contractResponse.Count();
+            }
+        }
+
+        loading = false;
+    }
+}
