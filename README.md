@@ -84,3 +84,10 @@ A note on testing - the testing at present is very rudimentary and will be impro
 6. `BlockExplorer.Handlers` Handler implementations for retrieving and mapping the domain data for the API/Blazor 
 7. `BlockExplorer.Tests.UnitTests` Basic unit tests
 
+![image](https://user-images.githubusercontent.com/3957173/145733925-070a929f-3162-4e3e-9b2a-51c1e4d744b3.png)
+
+![image](https://user-images.githubusercontent.com/3957173/145733903-16da2b50-c18f-4b39-a0ff-5eddb0a88842.png)
+
+![image](https://user-images.githubusercontent.com/3957173/145733969-43d8b0e1-805d-4ccf-a22d-e88bf253668d.png)
+
+
